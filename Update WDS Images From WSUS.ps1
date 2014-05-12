@@ -1,22 +1,26 @@
 ﻿<#
+
 .SUMMARY
 
-Updates all images in WDS using a WSUS repo. The script automatically
-runs the function Update-WdsFromWsus(), which does the work of syncing all images
-in the WDS server with updates available on WSUS.
+Updates all images in WDS using a WSUS repository. This script requires input,
+so in it's current state it must be run interactively. This script requires
+WDS running on Windows Server 2012 R2, which provides PowerShell cmdlets for
+managing Deployment Services.
 
-Basically the function requires a "Scratch Folder" with plenty of room to
-export WIM images, mount WIM images, and dump in updates. It also requires
-the path to the WSUS repository, which in this instance I have mapped to the
-Z: drive.
+The script will request a "Scratch Folder." This folder should reside on a
+drive with plenty of room for extracting and mounting the WIM images. It will
+also ask for the path to the WSUSContent directory, which is a shared folder
+where WSUS stores all of it's updates.
 
 .SEE
 
+Some VBScript that inspired this script:
 http://technet.microsoft.com/en-us/magazine/hh825626.aspx
 
 .AUTHOR
 
-Brian Reich <breich@reich-consulting.net>
+Brian Reich <breich@reich-consulting.net
+
 #>
 function Update-WdsFromWsus() {
 
