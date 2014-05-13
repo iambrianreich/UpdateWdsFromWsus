@@ -106,7 +106,7 @@ function Update-WdsImage() {
     $updatFolders = Get-ChildItem -Path $WsusContent
     
     foreach ($folder in $updatFolders) {
-        Add-WindowsPackage -PackagePath $folder.FullName -Path "C:\WdsUpdateFromWSUS\Windows 7 PROFESSIONAL"  -ErrorAction SilentlyContinue
+        Add-WindowsPackage -PackagePath $folder.FullName -Path $MountPath  -ErrorAction SilentlyContinue
     }
     
     # Dismount
