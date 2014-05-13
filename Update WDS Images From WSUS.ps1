@@ -21,23 +21,71 @@ http://technet.microsoft.com/en-us/magazine/hh825626.aspx
 
 Brian Reich <breich@reich-consulting.net
 
+.SYNOPSIS  
+
+    Updates operating system images in WDS using a WSUS repository.
+
+.DESCRIPTION  
+
+    Updates all images in WDS using a WSUS repository. This script requires input,
+    so in it's current state it must be run interactively. This script requires
+    WDS running on Windows Server 2012 R2, which provides PowerShell cmdlets for
+    managing Deployment Services.
+
+    The script will request a "Scratch Folder." This folder should reside on a
+    drive with plenty of room for extracting and mounting the WIM images. It will
+    also ask for the path to the WSUSContent directory, which is a shared folder
+    where WSUS stores all of it's updates.
+
+.NOTES  
+
+    Author : Brian Reich <breich@reich-consulting.net
+
+.LINK  
+
+    https://github.com/breich/UpdateWdsFromWsus
+    
+.EXAMPLE  
+
+    Update WDS images using C:\Temp as a the "scratch" folder where images will
+    be extracted, and use Z:\ as the location to look for the WSUS repository.
+    In this example, Z: is a network drive mapped to the WSUSContent share on
+    WSUS server:
+    
+    Update-WdsFromWsus -ScratchFolder "C:\Temp" -WsusContent "Z:\"
+    
+.RETURNVALUE  
+
+    Returns true if the update succeeded, false if not.
+    
+.PARAMETER ScratchFolder
+
+    The path to a folder that can be used to extract and work with WIM files
+    from the WDS server. The folder should be on a drive that has plenty of
+    space to work with extracted images.
+
+.PARAMETER WsusContent
+
+    The path to the WSUS "WSUSContent" share where updates are stored. You
+    can specify the network path to the share, or you could map a network
+    drive to the share and specify the drive name.
 #>
 function Update-WdsFromWsus() {
 
     Param(
-        [string] $Scratch,
+        [string] $ScratchFolder,
         [string] $WsusContent
     )
 
     
     # Make sure temp path exists
-    if( (Test-Path -Path $Scratch ) -eq $false ) {
-        Write-Host "Temp Folder $Scratch doesn't exist, creating it."
-        $createPath = New-Item -Path $Scratch -ItemType directory
+    if( (Test-Path -Path $ScratchFolder ) -eq $false ) {
+        Write-Host "Temp Folder $ScratchFolder doesn't exist, creating it."
+        $createPath = New-Item -Path $ScratchFolder -ItemType directory
 
         if( $createPath -eq $false ) {
 
-            Write-Host "Failed to create scratch path $Scratch. Exiting."
+            Write-Host "Failed to create scratch path $ScratchFolder. Exiting."
             return $false
         }
     }
@@ -46,7 +94,7 @@ function Update-WdsFromWsus() {
 
     # Update each image.
     foreach( $Image in $Images ) {
-        Update-WdsImage -Image $Image -Scratch $Scratch -WsusContent $WsusContent
+        Update-WdsImage -Image $Image -Scratch $ScratchFolder -WsusContent $WsusContent
     }
 }
 
@@ -58,11 +106,11 @@ function Update-WdsImage() {
     
     Param(
         $Image,
-        $Scratch,
+        $ScratchFolder,
         $WsusContent
     )
     
-    $ExportDestination    = "$Scratch\" + $image.FileName
+    $ExportDestination    = "$ScratchFolder\" + $image.FileName
     $ImageName      = $Image.ImageName
     $ImageNameParts = $ImageName.Split("|")
     $ImageName      = $ImageNameParts[0].Trim() + " | (Updated " + (Get-Date).ToShortDateString() + " via " + $MyInvocation.MyCommand.Name + ")"
@@ -85,7 +133,7 @@ function Update-WdsImage() {
     }
 
     # Create Mount path.
-    $MountPath = "$Scratch\$OldImageName"
+    $MountPath = "$ScratchFolder\$OldImageName"
     if( ( Test-Path -Path $MountPath ) -eq $false ) {
         Write-Host ".... Mount Folder $MountPath doesn't exist, creating it."
         $crap = New-Item -Path $MountPath -ItemType directory
@@ -152,6 +200,6 @@ Write-Host "temporary files, and the path to your WsusContent folder. This"
 Write-Host "process can take a while, so consider running it over the weekend."
 Write-Host ""
 
-$scratch = Read-Host "Enter the location to use as a scratch folder (ex. C:\Temp)"
+$ScratchFolder = Read-Host "Enter the location to use as a scratch folder (ex. C:\Temp)"
 $wsus    = Read-Host "Enter the location of the WSUS Repository (ex. Z:\WsusContent)"
-$foo = Update-WdsFromWsus -Scratch $scratch -WsusContent $wsus
+$foo = Update-WdsFromWsus -Scratch $ScratchFolder -WsusContent $wsus
